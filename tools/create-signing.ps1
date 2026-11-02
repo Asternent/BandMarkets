@@ -6,7 +6,7 @@ if(Test-Path -LiteralPath (Join-Path $keyRoot 'sync.p12')){throw 'A signing key 
 New-Item -ItemType Directory -Force -Path $keyRoot | Out-Null
 $password=[guid]::NewGuid().ToString('N')+[guid]::NewGuid().ToString('N')
 [IO.File]::WriteAllText((Join-Path $keyRoot 'password.txt'),$password)
-& (Join-Path $JdkPath 'bin\keytool.exe') -genkeypair -alias wristmarkets -keyalg RSA -keysize 2048 -validity 3650 -storetype PKCS12 -keystore (Join-Path $keyRoot 'sync.p12') -storepass $password -keypass $password -dname 'CN=WristMarkets Personal,O=Personal,C=TW'
+& (Join-Path $JdkPath 'bin\keytool.exe') -genkeypair -alias wristmarkets -keyalg RSA -keysize 2048 -validity 3650 -storetype PKCS12 -keystore (Join-Path $keyRoot 'sync.p12') -storepass $password -keypass $password -dname 'CN=BandMarkets Personal,O=Personal,C=TW'
 if($LASTEXITCODE -ne 0){throw 'Key generation failed'}
 & openssl pkcs12 -in (Join-Path $keyRoot 'sync.p12') -passin ('file:'+(Join-Path $keyRoot 'password.txt')) -nocerts -nodes -out (Join-Path $keyRoot 'private.pem')
 if($LASTEXITCODE -ne 0){throw 'Private key export failed'}

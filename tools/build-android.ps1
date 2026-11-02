@@ -29,7 +29,7 @@ Push-Location $dex
 try{Run-Checked (Join-Path $bt.FullName 'aapt.exe') @('add',$unsigned,'classes.dex')}finally{Pop-Location}
 $aligned=Join-Path $buildRoot 'aligned.apk'
 Run-Checked (Join-Path $bt.FullName 'zipalign.exe') @('-f','4',$unsigned,$aligned)
-$final=Join-Path $projectRoot 'dist\WristMarkets-Sync-0.3.0.apk'
+$final=Join-Path $projectRoot 'dist\BandMarkets-Sync-0.3.1.apk'
 Run-Checked (Join-Path $bt.FullName 'apksigner.bat') @('sign','--ks',(Join-Path $projectRoot 'signing\sync.p12'),'--ks-pass',('file:'+(Join-Path $projectRoot 'signing\password.txt')),'--ks-key-alias','wristmarkets','--out',$final,$aligned)
 Run-Checked (Join-Path $bt.FullName 'apksigner.bat') @('verify','--verbose',$final)
 Write-Output $final

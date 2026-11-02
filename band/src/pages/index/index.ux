@@ -3,13 +3,13 @@
     <list if="{{ !detail }}" class="screen" style="height: {{ viewportHeight }}px">
       <list-item type="header" class="header-item">
         <div class="header-content">
-          <div class="heading"><text class="title">環球股市</text><text class="refresh" @click="refresh">↻ 更新</text></div>
+          <div class="heading"><text class="title">腕上股市</text><text class="refresh" @click="refresh">↻ 更新</text></div>
           <text class="status">{{ status }}</text>
           <div class="filters"><text class="filter" @click="cycleRegion">{{ regionLabel }} ▾</text><text class="breadth">漲 {{ up }} / 跌 {{ down }}</text></div>
         </div>
       </list-item>
       <list-item type="empty" if="{{ rows.length === 0 }}" class="empty-item">
-        <div class="empty"><text class="empty-title">把世界行情帶上手腕</text><text class="empty-text">開啟手機「環球股市同步器」</text><text class="empty-text">點選更新行情並同步</text><text class="empty-text">行情可能延遲</text></div>
+        <div class="empty"><text class="empty-title">把世界行情帶上手腕</text><text class="empty-text">開啟手機「腕上股市同步器」</text><text class="empty-text">點選更新行情並同步</text><text class="empty-text">行情可能延遲</text></div>
       </list-item>
       <list-item type="market" for="{{ rows }}" class="market-item">
         <div class="card" @click="openDetail($item.symbol)">

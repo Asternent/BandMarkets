@@ -1,7 +1,7 @@
 # Third-party components and data
 
 The PolyForm Noncommercial license at the root of this repository applies to
-WristMarkets' original source code and documentation. It does not relicense
+BandMarkets' original source code and documentation. It does not relicense
 third-party components or market data.
 
 - **Xiaomi XMS Wearable SDK 1.4:** obtained from Xiaomi's official interconnect

@@ -1,6 +1,6 @@
 # Contributing
 
-WristMarkets accepts contributions under the same PolyForm Noncommercial
+BandMarkets accepts contributions under the same PolyForm Noncommercial
 License 1.0.0 used by the project. Keep third-party code under its own license
 and document its provenance in NOTICE.md.
 

@@ -1,6 +1,6 @@
 {
-  "name": "wrist-markets-band",
-  "version": "0.3.0",
+  "name": "bandmarkets-band",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
     "build": "aiot build",

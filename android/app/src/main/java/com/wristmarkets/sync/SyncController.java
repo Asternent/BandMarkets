@@ -83,11 +83,11 @@ public final class SyncController {
     main.postDelayed(()->{if(generation==connectGeneration&&!target.equals(listenerNode))bridgeStatus="通道建立逾時；此版小米運動健康可能未開放第三方互通";},12000);
   }
   private String reason(Exception e){
-    android.util.Log.w("WristMarkets", "Xiaomi interconnect: "+e.getClass().getSimpleName()+" "+e.getMessage());
+    android.util.Log.w("BandMarkets", "Xiaomi interconnect: "+e.getClass().getSimpleName()+" "+e.getMessage());
     String name=e.getClass().getSimpleName();
     if(name.contains("Signature"))return "小米拒絕簽章驗證；請確認安裝的是同一組 APK 與 RPK";
     if(name.contains("Permission"))return "小米拒絕存取；目前小米運動健康可能需要開發者接入授權";
-    if(name.contains("NotInstalled"))return "請先安裝中國版小米運動健康及手環端環球股市";
+    if(name.contains("NotInstalled"))return "請先安裝中國版小米運動健康及手環端腕上股市";
     return "手環連線失敗（"+name+"）；請確認小米運動健康與手環端都已開啟";
   }
   private void sendSnapshot(){
@@ -107,7 +107,7 @@ public final class SyncController {
   private byte[] encode(JSONObject j){return j.toString().getBytes(StandardCharsets.UTF_8);}
   private void startPackets(){
     packetIndex=0;bridgeStatus="正在傳送到手環…";final int generation=++transferGeneration;
-    main.postDelayed(()->{if(sending&&generation==transferGeneration){if(sendAttempt++<1){startPackets();}else{sending=false;transferGeneration++;bridgeStatus="未收到手環確認；請打開手環端環球股市後重試";}}},35000);
+    main.postDelayed(()->{if(sending&&generation==transferGeneration){if(sendAttempt++<1){startPackets();}else{sending=false;transferGeneration++;bridgeStatus="未收到手環確認；請打開手環端腕上股市後重試";}}},35000);
     nextPacket(generation);
   }
   private void nextPacket(int generation){

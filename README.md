@@ -1,6 +1,6 @@
-# WristMarkets · 環球股市
+# BandMarkets · 腕上股市
 
-中國版 Xiaomi Band 10 Pro 的全球股市與自選股票工具，搭配原生 Android 同步器。**目前版本：0.3.0。**
+中國版 Xiaomi Band 10 Pro 的全球股市與自選股票工具，搭配原生 Android 同步器。**目前版本：0.3.1。**
 
 原始碼依 **PolyForm Noncommercial License 1.0.0** 公開，僅授權協議所定義的非商業用途。可以閱讀、修改與分享；商業使用未獲授權。這屬於 source-available，不是 OSI 定義的開放原始碼授權。詳見 [LICENSE](LICENSE) 與 [第三方聲明](NOTICE.md)。
 
@@ -15,13 +15,13 @@
 
 ## 安裝與升級
 
-1. 在 Android 8 或以上安裝 `WristMarkets-Sync-0.3.0.apk`。
-2. 用已設定好的 AstroBox 或相容工具安裝 `WristMarkets-Band-0.3.0.rpk`。同步器「手環同步 → 安裝手環端程式」也內含同一份 RPK。
+1. 在 Android 8 或以上安裝 `BandMarkets-Sync-0.3.1.apk`。
+2. 用已設定好的 AstroBox 或相容工具安裝 `BandMarkets-Band-0.3.1.rpk`。同步器「手環同步 → 安裝手環端程式」也內含同一份 RPK。
 3. 安裝後退出 AstroBox，讓**中國版小米運動健康**重新連上手環。
-4. 在手環開啟「環球股市」。手機點「連接並傳送現有行情」，首次使用再點「授權手環通訊」，接著「更新行情並同步」。
+4. 在手環開啟「腕上股市」。手機點「連接並傳送現有行情」，首次使用再點「授權手環通訊」，接著「更新行情並同步」。
 5. 顯示「手環已確認收到並儲存行情」才代表同步完成；僅顯示行情取得成功，代表手機已下載資料。
 
-**0.3.0 使用同步協議 v2，請同時更新 APK 與 RPK。** 舊快取可以讀取，但不會把舊版的單日樣本誤標成五日圖；手機升級後會自動重新取得舊格式的行情。
+**0.3.1 使用同步協議 v2，請同時更新 APK 與 RPK。** 舊快取可以讀取，但不會把舊版的單日樣本誤標成五日圖；手機升級後會自動重新取得舊格式的行情。
 
 兩端使用相同包名 `com.wristmarkets.sync` 與相同簽章。不同版本的小米運動健康或韌體可能仍需要開發者接入條件。若出現權限錯誤，先完成「授權手環通訊」；不要只反覆重傳。
 
@@ -52,7 +52,7 @@
 ./tools/create-signing.ps1 -JdkPath $env:JAVA_HOME
 npm --prefix band ci
 npm --prefix band run release
-Copy-Item band/dist/com.wristmarkets.sync.release.0.3.0.rpk android/app/src/main/assets/band.rpk
+Copy-Item band/dist/com.wristmarkets.sync.release.0.3.1.rpk android/app/src/main/assets/band.rpk
 ./tools/build-android.ps1 -SdkPath $env:ANDROID_HOME -JdkPath $env:JAVA_HOME
 ```
 
