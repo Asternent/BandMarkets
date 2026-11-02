@@ -1,0 +1,199 @@
+<template>
+  <div class="root" style="height: {{ viewportHeight }}px">
+    <list if="{{ !detail }}" class="screen" style="height: {{ viewportHeight }}px">
+      <list-item type="header" class="header-item">
+        <div class="header-content">
+          <div class="heading"><text class="title">環球股市</text><text class="refresh" @click="refresh">↻ 更新</text></div>
+          <text class="status">{{ status }}</text>
+          <div class="filters"><text class="filter" @click="cycleRegion">{{ regionLabel }} ▾</text><text class="breadth">漲 {{ up }} / 跌 {{ down }}</text></div>
+        </div>
+      </list-item>
+      <list-item type="empty" if="{{ rows.length === 0 }}" class="empty-item">
+        <div class="empty"><text class="empty-title">把世界行情帶上手腕</text><text class="empty-text">開啟手機「環球股市同步器」</text><text class="empty-text">點選更新行情並同步</text><text class="empty-text">行情可能延遲</text></div>
+      </list-item>
+      <list-item type="market" for="{{ rows }}" class="market-item">
+        <div class="card" @click="openDetail($item.symbol)">
+          <div class="card-top"><text class="name">{{ $item.listName }}</text><text class="pct" style="color: {{ $item.color }}">{{ $item.pct }}</text></div>
+          <div class="card-bottom"><text class="price">{{ $item.price }}</text><text class="session">{{ $item.sessionText }}</text></div>
+        </div>
+      </list-item>
+      <list-item type="foot" class="foot-item"><text class="foot">Yahoo Finance · 行情可能延遲</text></list-item>
+    </list>
+    <list if="{{ detail }}" class="screen" style="height: {{ viewportHeight }}px">
+      <list-item type="back" class="back-item"><text class="back" @click="closeDetail">‹ 返回市場列表</text></list-item>
+      <list-item type="detail" class="detail-item">
+        <div class="detail-content">
+          <text class="region">{{ detail.region }} · {{ detail.symbol }}</text>
+          <text class="detail-name">{{ detail.name }}</text>
+          <text class="symbol">{{ detail.exchange }}</text>
+          <text class="detail-price">{{ detail.price }}</text>
+          <text class="detail-change" style="color: {{ detail.color }}">{{ detail.delta }} {{ detail.unit }} / {{ detail.pct }}</text>
+          <text class="detail-session">{{ detail.sessionText }}</text>
+          <text class="chart-title">近五個交易日</text>
+          <chart if="{{ detail.hasChart }}" class="line-chart" type="line" options="{{ detail.chartOptions }}" datasets="{{ detail.lineData }}"></chart>
+          <text if="{{ !detail.hasChart }}" class="chart-empty">{{ detail.chartHint }}</text>
+          <div class="chart-dates"><text class="muted">{{ detail.firstDate }}</text><text class="muted">{{ detail.lastDate }}</text></div>
+          <text class="period">區間漲跌 {{ detail.periodText }}</text>
+          <text class="muted">首末報價比較；未收盤資料為暫定值</text>
+        </div>
+      </list-item>
+      <list-item type="stats" class="stats-item">
+        <div class="stats-content">
+          <text class="section-title">交易與區間資料</text>
+          <div class="kv"><text class="muted">開盤</text><text class="kv-value">{{ detail.openText }}</text></div>
+          <div class="kv"><text class="muted">前日收盤</text><text class="kv-value">{{ detail.previousText }}</text></div>
+          <div class="kv"><text class="muted">當日最高</text><text class="kv-value">{{ detail.highText }}</text></div>
+          <div class="kv"><text class="muted">當日最低</text><text class="kv-value">{{ detail.lowText }}</text></div>
+          <div class="kv"><text class="muted">成交量</text><text class="kv-value">{{ detail.volumeText }}</text></div>
+          <div class="kv"><text class="muted">52 週最高</text><text class="kv-value">{{ detail.weekHighText }}</text></div>
+          <div class="kv"><text class="muted">52 週最低</text><text class="kv-value">{{ detail.weekLowText }}</text></div>
+          <div class="kv"><text class="muted">報價單位</text><text class="kv-value">{{ detail.unit }}</text></div>
+        </div>
+      </list-item>
+      <list-item type="daily-heading" class="daily-heading"><text class="section-title">逐日收盤／最新報價</text></list-item>
+      <list-item type="daily" for="{{ detail.historyRows }}" class="daily-item">
+        <div class="daily-row"><text class="daily-date">{{ $item.label }}</text><text class="daily-close">{{ $item.price }}</text></div>
+      </list-item>
+      <list-item type="detail-foot" class="detail-foot">
+        <div class="detail-foot-content"><text class="quote-time">報價 {{ detail.timeText }}</text><text class="muted">交易所 {{ detail.zone }}</text><text class="muted">報價時間依手環當地時區顯示</text><text class="foot">Yahoo Finance · 行情可能延遲</text></div>
+      </list-item>
+    </list>
+  </div>
+</template>
+<script>
+import interconnect from '@system.interconnect'
+import storage from '@system.storage'
+import device from '@system.device'
+const protocol = require('../../common/protocol')
+function number(v, digits) { if (typeof v !== 'number' || !isFinite(v)) return '—'; return v.toFixed(typeof digits === 'number' ? Math.max(0,Math.min(6,digits)) : 2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') }
+function signed(v, digits) { return typeof v === 'number' ? (v > 0 ? '+' : '') + number(v, digits) : '—' }
+function amount(v) { return typeof v !== 'number' ? '—' : v >= 100000000 ? number(v/100000000)+' 億' : v >= 10000 ? number(v/10000)+' 萬' : number(v,0) }
+function date(t) { if (!t) return '尚無報價'; const d = new Date(t); return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2) }
+export default {
+  private: { status: '等待手機同步', rows: [], detail: null, regionIndex: 0, regionLabel: '全部市場', up: 0, down: 0, viewportHeight: 456 },
+  onInit() {
+    device.getInfo({success:(info)=>{if(info.screenWidth>0&&info.screenHeight>0)this.viewportHeight=Math.max(300,Math.round(info.screenHeight/info.screenWidth*336)-24)},fail:()=>{}})
+    this.receiver = protocol.createReceiver(null)
+    this.snapshot = null
+    this.connection = interconnect.instance()
+    this.connection.onopen = () => { this.send({type:'hello',v:2}); this.status = this.snapshot ? '已連線 · '+date(this.snapshot.generatedAt) : '已連線 · 等待手機行情' }
+    this.connection.onclose = () => { this.status = this.snapshot ? '離線快取 · '+date(this.snapshot.generatedAt) : '手機未連線' }
+    this.connection.onerror = () => { this.status = this.snapshot ? '快取 · '+date(this.snapshot.generatedAt) : '請開啟手機同步器' }
+    this.connection.onmessage = (event) => this.receive(event.data)
+    storage.get({key:'markets-v1',success:(raw)=>{
+      try {const s=JSON.parse(raw);if(protocol.validSnapshot(s)&&(!this.snapshot||Number(s.id)>Number(this.snapshot.id))){this.snapshot=s;this.receiver.accept(s);this.renderRows();this.status='快取 · '+date(s.generatedAt)}} catch(e){}
+      this.hello()
+    }, fail:()=>this.hello()})
+  },
+  hello() { this.connection.getReadyState({success:(s)=>{if(s.status===1)this.send({type:'hello',v:2})},fail:()=>{}}) },
+  send(data) { if(this.connection)this.connection.send({data:data,success:()=>{},fail:()=>{}}) },
+  refresh() {
+    this.status='正在請求手機行情…'
+    this.send({type:'refresh',v:2})
+    if(this.waitTimer)clearTimeout(this.waitTimer)
+    this.waitTimer=setTimeout(()=>{this.status=this.snapshot?'請確認手機連線 · 快取 '+date(this.snapshot.generatedAt):'請開啟手機同步器後重試'},15000)
+  },
+  receive(raw) {
+    const result=this.receiver.receive(raw,Date.now())
+    if(!result)return
+    if(result.ack){this.send(result.ack);return}
+    if(result.nack){this.send({type:'nack',v:2,id:result.id});this.status='資料不完整，請重新同步';return}
+    if(result.snapshot){
+      const s=result.snapshot
+      storage.set({key:'markets-v1',value:JSON.stringify(s),success:()=>{
+        if(this.snapshot&&Number(s.id)<Number(this.snapshot.id))return
+        this.snapshot=s;this.receiver.accept(s);this.renderRows();this.status='同步 '+date(s.generatedAt)
+        if(this.waitTimer)clearTimeout(this.waitTimer)
+        this.send({type:'ack',v:2,id:s.id,count:s.quotes.length})
+      },fail:()=>{this.status='儲存失敗，請重新同步';this.send({type:'nack',v:2,id:s.id})}})
+    }else if(typeof result.progress==='number'){this.status='接收行情 '+result.progress+(result.count?'/'+result.count:'')}
+  },
+  renderRows() {
+    if(!this.snapshot)return
+    const redUp=this.snapshot.redUp!==false,regions=['全部市場','自選股票','亞太市場','美洲市場','歐洲市場','非洲市場']
+    this.regionLabel=regions[this.regionIndex]
+    this.up=this.snapshot.quotes.filter(q=>q.time&&q.percent>0).length
+    this.down=this.snapshot.quotes.filter(q=>q.time&&q.percent<0).length
+    const shown=this.snapshot.quotes.filter(q=>this.regionIndex===0||(this.regionIndex===1?q.custom===true:this.regionIndex===2?(q.region==='亞洲'||q.region==='亞太'):q.region===(this.regionIndex===3?'美洲':this.regionIndex===4?'歐洲':'非洲')))
+    this.rows=shown.map(q=>this.decorate(q,redUp))
+    if(this.detail){const found=this.snapshot.quotes.filter(q=>q.symbol===this.detail.symbol);if(found.length)this.detail=this.decorate(found[0],redUp)}
+  },
+  decorate(q, redUp) {
+    const history=q.history||[],values=history.map(d=>d.close),digits=q.priceDigits||2
+    const min=values.length?Math.min.apply(null,values):0,max=values.length?Math.max.apply(null,values):0
+    const chart=values.map(v=>max===min?50:8+Math.round((v-min)/(max-min)*84))
+    const color=q.percent>0?(redUp?'#FFB4AB':'#94D99A'):q.percent<0?(redUp?'#94D99A':'#FFB4AB'):'#CAC4D0'
+    return Object.assign({},q,{listName:q.custom?q.symbol:q.name,price:number(q.value,digits),pct:q.time?signed(q.percent)+'%':'—',delta:signed(q.change,digits),color:color,
+      unit:q.type==='INDEX'||!q.type?'點':(q.currency||'—'),sessionText:q.error?(q.time?'快取／更新失敗':'尚無報價'):(q.session||'行情可能延遲'),
+      openText:number(q.open,digits),previousText:number(q.previous,digits),highText:number(q.high,digits),lowText:number(q.low,digits),volumeText:amount(q.volume),weekHighText:number(q.week52High,digits),weekLowText:number(q.week52Low,digits),timeText:date(q.time*1000),
+      hasChart:history.length>1,chartHint:history.length===1?'目前僅有一個交易日報價':'請在手機更新以取得五日資料',
+      firstDate:history.length?history[0].date.slice(5).replace('-','/'):'',lastDate:history.length?history[history.length-1].date.slice(5).replace('-','/'):'',periodText:typeof q.periodPercent==='number'?signed(q.periodPercent)+'%':'—',
+      chartOptions:{xAxis:{min:0,max:Math.max(1,values.length-1),display:false,axisTick:Math.max(1,values.length-1)},yAxis:{min:0,max:100,display:false},series:{lineStyle:{width:'3px'}}},
+      lineData:[{strokeColor:'#D0BCFF',data:chart}],historyRows:history.map(d=>({label:d.date+(d.partial?' *':''),price:number(d.close,digits)}))})
+  },
+  cycleRegion() {this.regionIndex=(this.regionIndex+1)%6;this.renderRows()},
+  openDetail(symbol) {const found=this.rows.filter(q=>q.symbol===symbol);if(found.length)this.detail=found[0]},
+  closeDetail() {this.detail=null},
+  onBackPress() {if(this.detail){this.closeDetail();return true}return false},
+  onDestroy() {if(this.waitTimer)clearTimeout(this.waitTimer);if(this.connection){this.connection.onmessage=null;this.connection.onopen=null;this.connection.onclose=null;this.connection.onerror=null}}
+}
+</script>
+<style>
+.root{width:336px;height:456px;background-color:#141218;flex-direction:column;}
+.screen{width:336px;height:456px;background-color:#141218;}
+.header-item{width:336px;height:130px;}
+.header-content{width:312px;height:130px;margin-left:12px;padding-top:18px;flex-direction:column;}
+.heading{width:312px;height:40px;align-items:center;justify-content:space-between;flex-shrink:0;}
+.title{font-size:27px;color:#E6E0E9;font-weight:bold;}
+.refresh{font-size:20px;color:#EADDFF;background-color:#4F378B;border-radius:24px;padding:8px 12px;}
+.status{width:312px;font-size:17px;color:#CAC4D0;height:28px;flex-shrink:0;}
+.filters{width:312px;height:36px;justify-content:space-between;align-items:center;flex-shrink:0;}
+.filter{font-size:17px;color:#EADDFF;background-color:#332D41;border-radius:18px;padding:6px 12px;}
+.breadth{font-size:17px;color:#CAC4D0;}
+.market-item{width:336px;height:99px;}
+.card{width:312px;height:91px;margin-left:12px;background-color:#211F26;border-radius:20px;padding:11px 12px;flex-direction:column;}
+.card-top,.card-bottom{width:288px;justify-content:space-between;align-items:center;flex-shrink:0;}
+.card-top{height:32px;}
+.card-bottom{height:29px;}
+.name{font-size:21px;color:#E6E0E9;}
+.pct{font-size:19px;background-color:#2B2930;border-radius:12px;padding:3px 6px;}
+.price{font-size:26px;color:#E6E0E9;}
+.session{font-size:14px;color:#CAC4D0;}
+.empty-item{width:336px;height:245px;}
+.empty{width:336px;height:235px;flex-direction:column;align-items:center;justify-content:center;}
+.empty-title{color:#D0BCFF;font-size:22px;margin-bottom:20px;}
+.empty-text{color:#CAC4D0;font-size:18px;margin-bottom:9px;}
+.foot-item{width:336px;height:60px;align-items:center;justify-content:center;}
+.foot{width:312px;font-size:15px;color:#938F99;margin-top:13px;margin-bottom:24px;text-align:center;}
+.back-item{width:336px;height:60px;}
+.back{width:312px;height:60px;margin-left:12px;padding-top:18px;color:#D0BCFF;font-size:21px;}
+.detail-item{width:336px;height:640px;}
+.detail-content{width:312px;height:640px;margin-left:12px;flex-direction:column;}
+.region{font-size:18px;color:#D0BCFF;}
+.detail-name{width:312px;font-size:29px;color:#E6E0E9;margin-top:15px;}
+.symbol{font-size:16px;color:#CAC4D0;margin-top:5px;}
+.detail-price{font-size:42px;color:#E6E0E9;margin-top:22px;}
+.detail-change{font-size:21px;margin-top:9px;}
+.detail-session{font-size:18px;color:#CAC4D0;margin-top:9px;}
+.chart{height:80px;width:312px;align-items:flex-end;justify-content:space-between;margin-top:18px;flex-shrink:0;}
+.bar{width:9px;border-radius:2px;}
+.muted{font-size:17px;color:#CAC4D0;margin-top:7px;}
+.kv{width:288px;height:36px;justify-content:space-between;align-items:center;margin-top:12px;flex-shrink:0;}
+.kv-value{font-size:22px;color:#E6E0E9;}
+.quote-time{font-size:19px;color:#CAC4D0;margin-top:22px;}
+.chart-title{width:312px;font-size:21px;color:#E6E0E9;margin-top:20px;margin-bottom:12px;}
+.line-chart{width:312px;height:140px;flex-shrink:0;background-color:#211F26;}
+.chart-empty{width:312px;height:100px;color:#CAC4D0;font-size:18px;text-align:center;}
+.chart-dates{width:312px;height:32px;justify-content:space-between;flex-shrink:0;}
+.period{width:312px;font-size:19px;color:#D0BCFF;margin-top:8px;}
+.stats-item{width:336px;height:480px;}
+.stats-content{width:312px;height:480px;margin-left:12px;padding:16px 12px;background-color:#211F26;border-radius:20px;flex-direction:column;}
+.section-title{font-size:21px;color:#E6E0E9;margin-bottom:8px;}
+.daily-heading{width:336px;height:60px;padding:20px 12px 8px;}
+.daily-item{width:336px;height:66px;}
+.daily-row{width:312px;height:58px;margin-left:12px;padding:12px;background-color:#211F26;border-radius:14px;justify-content:space-between;align-items:center;}
+.daily-date{font-size:18px;color:#CAC4D0;}
+.daily-close{font-size:22px;color:#E6E0E9;}
+.detail-foot{width:336px;height:180px;}
+.detail-foot-content{width:312px;height:180px;margin-left:12px;flex-direction:column;}
+</style>

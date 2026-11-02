@@ -1,0 +1,14 @@
+{
+  "package": "com.wristmarkets.sync",
+  "name": "環球股市",
+  "versionName": "0.3.0",
+  "versionCode": 4,
+  "minAPILevel": 1,
+  "minPlatformVersion": 1200,
+  "icon": "/common/icon.png",
+  "deviceTypeList": ["watch"],
+  "features": [{"name":"system.interconnect"},{"name":"system.storage"},{"name":"system.device"}],
+  "config": {"logLevel":"error","designWidth":336},
+  "display": {"backgroundColor":"#090F14"},
+  "router": {"entry":"pages/index","pages":{"pages/index":{"component":"index"}}}
+}

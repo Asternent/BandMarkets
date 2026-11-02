@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.wristmarkets.sync" android:versionCode="4" android:versionName="0.3.0">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <queries><package android:name="com.mi.health" /><package android:name="com.xiaomi.wearable" /><package android:name="moe.astralsight.astrobox" /></queries>
+  <application android:name=".MarketsApp" android:label="環球股市同步器" android:icon="@drawable/icon" android:theme="@style/Theme.WristMarkets" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true">
+    <activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity>
+    <service android:name=".SyncJob" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true" />
+    <provider android:name=".BandPackageProvider" android:authorities="com.wristmarkets.sync.band" android:exported="false" android:grantUriPermissions="true" />
+  </application>
+</manifest>
